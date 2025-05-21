@@ -1,131 +1,97 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useState, useMemo} from 'react';
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
+  SafeAreaView,
+  SectionList,
+  TextInput,
   Text,
-  useColorScheme,
-  View,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
 } from 'react-native';
+import {createNamesData, filterAndGroupNames} from './src/utils';
+import ListHeader from './src/components/ListHeader';
+import ListItem from './src/components/ListItem';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortAsc, setSortAsc] = useState(true);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+  const namesData = useMemo(() => {
+    console.log('namesData rendered');
+    return createNamesData(1000);
+  }, []);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  const groupedData = useMemo(() => {
+    console.log('groupedData rendered');
+    return filterAndGroupNames(namesData, searchQuery, sortAsc);
+  }, [searchQuery, sortAsc]);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
+  console.log(groupedData);
 
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>LIST</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Search names..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
       />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
+      <TouchableOpacity
+        style={styles.sortBtn}
+        onPress={() => setSortAsc(prev => !prev)}>
+        <Text style={styles.sortText}>Sort: {sortAsc ? 'A → Z' : 'Z → A'}</Text>
+      </TouchableOpacity>
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+      <SectionList
+        sections={groupedData}
+        keyExtractor={(item, index) => item + index}
+        renderItem={({item}) => <ListItem name={item} />}
+        renderSectionHeader={({section: {title}}) => (
+          <ListHeader title={title} />
+        )}
+        stickySectionHeadersEnabled
+        initialNumToRender={20}
+        maxToRenderPerBatch={20}
+        windowSize={10}
+      />
+    </SafeAreaView>
+  );
+};
 
 export default App;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: Platform.OS === 'ios' ? 20 : 10,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: 'gray',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 8,
+  },
+  sortBtn: {
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+  },
+  sortText: {
+    color: 'blue',
+    fontWeight: '500',
+  },
+  item: {
+    padding: 12,
+    borderBottomColor: 'gray',
+    borderBottomWidth: 1,
+  },
+  itemText: {
+    fontSize: 14,
+  },
+});
